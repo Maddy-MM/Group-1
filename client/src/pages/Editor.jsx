@@ -10,6 +10,10 @@ export default function Editor({ session }) {
   const navigate = useNavigate()
   const editorRef = useRef(null)
   const quillRef = useRef(null)
+  const [showShare, setShowShare] = useState(false)
+  const [shareEmail, setShareEmail] = useState('')
+  const [shareStatus, setShareStatus] = useState('')
+  const [isOwner, setIsOwner] = useState(false)
   const [doc, setDoc] = useState(null)
   const [status, setStatus] = useState('loading')
   const [activeUsers, setActiveUsers] = useState([])
@@ -66,6 +70,7 @@ export default function Editor({ session }) {
 
     quillRef.current = quill
     setStatus('ready')
+    checkOwner()
 
     // Socket.io setup
     const userName = session?.user?.user_metadata?.full_name || session?.user?.email
@@ -79,7 +84,7 @@ export default function Editor({ session }) {
     })
 
     socket.on('users-update', (users) => {
-      setActiveUsers(users.filter(u => u.id !== socket.id))
+      setActiveUsers(users.filter(u => u.socketId !== socket.id))
     })
 
     // Send changes + auto save
@@ -115,6 +120,45 @@ export default function Editor({ session }) {
     setStatus('saving')
     saveContent(quillRef.current)
   }
+
+
+  async function handleShare() {
+    if (!shareEmail.trim()) return
+    setShareStatus('loading')
+
+    // Find user by email
+    const { data: users, error } = await supabase
+        .rpc('get_user_by_email', { email_input: shareEmail.trim() })
+
+    if (error || !users?.length) {
+        setShareStatus('User not found')
+        return
+    }
+
+    const targetUser = users[0]
+
+    // Add to document_members
+    const { error: memberError } = await supabase
+        .from('document_members')
+        .insert({ doc_id: docId, user_id: targetUser.id, role: 'editor' })
+
+    if (memberError) {
+        setShareStatus(memberError.code === '23505' ? 'User already has access' : 'Error adding user')
+    } else {
+        setShareStatus(`✓ ${shareEmail} can now edit this doc`)
+        setShareEmail('')
+    }
+  }
+
+async function checkOwner() {
+  const { data } = await supabase
+    .from('document_members')
+    .select('role')
+    .eq('doc_id', docId)
+    .eq('user_id', session.user.id)
+    .single()
+  setIsOwner(data?.role === 'owner')
+}
 
   useEffect(() => {
     return () => {
@@ -170,7 +214,56 @@ export default function Editor({ session }) {
           >
             Save
           </button>
+          {isOwner && (
+            <button
+                onClick={() => setShowShare(true)}
+                style={{ backgroundColor: '#fff', color: '#0D0D0D', border: '1px solid #E2DDD6', padding: '8px 16px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
+            >
+                Share
+            </button>
+          )}
         </div>
+        {showShare && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+            <div style={{ backgroundColor: '#fff', padding: '32px', width: '100%', maxWidth: '400px' }}>
+            <h2 style={{ fontWeight: 'bold', fontSize: '20px', color: '#0D0D0D', marginBottom: '8px' }}>Share Document</h2>
+            <p style={{ color: '#9A9A8E', fontSize: '13px', marginBottom: '24px' }}>Invite someone to edit this document</p>
+
+            <label style={{ display: 'block', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '2px', color: '#9A9A8E', marginBottom: '8px' }}>Email address</label>
+            <input
+                style={{ width: '100%', border: '1px solid #E2DDD6', padding: '12px 16px', fontSize: '14px', outline: 'none', marginBottom: '16px', boxSizing: 'border-box' }}
+                type="email"
+                placeholder="teammate@example.com"
+                value={shareEmail}
+                onChange={e => { setShareEmail(e.target.value); setShareStatus('') }}
+                onKeyDown={e => e.key === 'Enter' && handleShare()}
+                autoFocus
+            />
+
+            {shareStatus && (
+                <p style={{ fontSize: '13px', marginBottom: '16px', color: shareStatus.startsWith('✓') ? '#2AE857' : '#E8572A' }}>
+                {shareStatus === 'loading' ? 'Adding user...' : shareStatus}
+                </p>
+            )}
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                onClick={handleShare}
+                disabled={shareStatus === 'loading'}
+                style={{ flex: 1, backgroundColor: '#0D0D0D', color: '#fff', border: 'none', padding: '12px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
+                >
+                Add Editor
+                </button>
+                <button
+                onClick={() => { setShowShare(false); setShareEmail(''); setShareStatus('') }}
+                style={{ flex: 1, backgroundColor: '#fff', color: '#0D0D0D', border: '1px solid #E2DDD6', padding: '12px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}
+                >
+                Close
+                </button>
+            </div>
+            </div>
+        </div>
+        )}
       </div>
 
       {/* Editor container */}

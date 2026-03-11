@@ -37,10 +37,9 @@ io.on('connection', (socket) => {
   socket.on('join-doc', ({ docId, userName }) => {
     socket.join(docId)
     if (!docRooms.has(docId)) docRooms.set(docId, new Map())
-    docRooms.get(docId).set(socket.id, { id: socket.id, name: userName })
+    docRooms.get(docId).set(socket.id, { socketId: socket.id, id: socket.id, name: userName })
     const users = Array.from(docRooms.get(docId).values())
     io.to(docId).emit('users-update', users)
-    console.log(`${userName} joined doc ${docId}`)
   })
 
   socket.on('doc-change', ({ docId, delta }) => {

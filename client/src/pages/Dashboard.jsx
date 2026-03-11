@@ -18,26 +18,39 @@ export default function Dashboard({ session }) {
 
   async function fetchDocs() {
     setLoading(true)
+
+    // Get only docs where current user is a member
     const { data, error } = await supabase
-      .from('documents')
-      .select('*')
-      .order('created_at', { ascending: false })
+        .from('document_members')
+        .select('doc_id, role, documents(*)')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
 
     console.log('fetchDocs result:', data, error)
-    if (!error) setDocs(data || [])
+    if (!error) setDocs(data?.map(d => ({ ...d.documents, role: d.role })) || [])
     setLoading(false)
   }
 
   async function createDoc() {
     if (!newTitle.trim()) return
     setCreating(true)
-    const { data, error } = await supabase
-      .from('documents')
-      .insert({ title: newTitle.trim(), content: '', owner_id: session.user.id })
-      .select()
-      .single()
 
-    if (!error && data) navigate(`/editor/${data.id}`)
+    // Create the document
+    const { data, error } = await supabase
+        .from('documents')
+        .insert({ title: newTitle.trim(), content: '', owner_id: session.user.id })
+        .select()
+        .single()
+
+    if (!error && data) {
+        // Add creator as owner in document_members
+        await supabase.from('document_members').insert({
+        doc_id: data.id,
+        user_id: session.user.id,
+        role: 'owner'
+        })
+        navigate(`/editor/${data.id}`)
+    }
     setCreating(false)
   }
 
