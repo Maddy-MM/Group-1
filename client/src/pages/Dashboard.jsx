@@ -5,9 +5,9 @@ import { supabase } from '../lib/supabaseClient'
 export default function Dashboard({ session }) {
   const [docs, setDocs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [creating, setCreating] = useState(false)
   const navigate = useNavigate()
 
   const userName = session?.user?.user_metadata?.full_name || session?.user?.email
@@ -23,6 +23,7 @@ export default function Dashboard({ session }) {
       .select('*')
       .order('created_at', { ascending: false })
 
+    console.log('fetchDocs result:', data, error)
     if (!error) setDocs(data || [])
     setLoading(false)
   }
@@ -30,20 +31,13 @@ export default function Dashboard({ session }) {
   async function createDoc() {
     if (!newTitle.trim()) return
     setCreating(true)
-
     const { data, error } = await supabase
       .from('documents')
-      .insert({
-        title: newTitle.trim(),
-        content: '',
-        owner_id: session.user.id
-      })
+      .insert({ title: newTitle.trim(), content: '', owner_id: session.user.id })
       .select()
       .single()
 
-    if (!error && data) {
-      navigate(`/editor/${data.id}`)
-    }
+    if (!error && data) navigate(`/editor/${data.id}`)
     setCreating(false)
   }
 
@@ -59,102 +53,60 @@ export default function Dashboard({ session }) {
   }
 
   function formatDate(ts) {
-    return new Date(ts).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric'
-    })
+    return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
   return (
-    <div className="min-h-screen bg-paper">
-      {/* Top nav */}
-      <nav className="border-b border-border bg-surface px-8 py-4 flex items-center justify-between">
-        <span className="font-display font-bold text-ink text-lg tracking-tight">COLLAB</span>
-        <div className="flex items-center gap-6">
-          <span className="font-body text-sm text-muted hidden sm:block">{userName}</span>
-          <button onClick={handleSignOut} className="font-display text-xs uppercase tracking-widest text-muted hover:text-accent transition-colors">
-            Sign Out
-          </button>
+    <div style={{ minHeight: '100vh', backgroundColor: '#F5F2EB', fontFamily: 'sans-serif' }}>
+      <nav style={{ borderBottom: '1px solid #E2DDD6', backgroundColor: '#fff', padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontWeight: 'bold', fontSize: '18px', color: '#0D0D0D' }}>COLLAB</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <span style={{ color: '#9A9A8E', fontSize: '14px' }}>{userName}</span>
+          <button onClick={handleSignOut} style={{ background: 'none', border: 'none', color: '#9A9A8E', cursor: 'pointer', fontSize: '13px' }}>Sign Out</button>
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-8 py-12">
-        {/* Header */}
-        <div className="flex items-end justify-between mb-12">
-          <div>
-            <p className="font-display text-xs uppercase tracking-widest text-muted mb-2">Workspace</p>
-            <h1 className="font-display font-bold text-4xl text-ink">Your Documents</h1>
-          </div>
-          <button
-            className="btn-primary flex items-center gap-2"
-            onClick={() => setShowModal(true)}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            New Document
+      <div style={{ maxWidth: '960px', margin: '0 auto', padding: '48px 32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px' }}>
+          <h1 style={{ fontSize: '36px', fontWeight: 'bold', color: '#0D0D0D', margin: 0 }}>Your Documents</h1>
+          <button onClick={() => setShowModal(true)} style={{ backgroundColor: '#0D0D0D', color: '#fff', border: 'none', padding: '12px 24px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
+            + New Document
           </button>
         </div>
 
-        {/* Docs grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1,2,3].map(i => (
-              <div key={i} className="card animate-pulse h-36">
-                <div className="h-4 bg-border rounded w-2/3 mb-3" />
-                <div className="h-3 bg-border rounded w-1/3" />
-              </div>
-            ))}
-          </div>
+          <p style={{ color: '#9A9A8E' }}>Loading...</p>
         ) : docs.length === 0 ? (
-          <div className="text-center py-24 border border-dashed border-border">
-            <svg className="w-12 h-12 text-border mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p className="font-display font-semibold text-ink mb-2">No documents yet</p>
-            <p className="font-body text-sm text-muted mb-6">Create your first document to get started</p>
-            <button className="btn-primary" onClick={() => setShowModal(true)}>Create Document</button>
+          <div style={{ textAlign: 'center', padding: '80px', border: '2px dashed #E2DDD6' }}>
+            <p style={{ color: '#0D0D0D', fontWeight: '600', marginBottom: '8px' }}>No documents yet</p>
+            <p style={{ color: '#9A9A8E', fontSize: '14px', marginBottom: '24px' }}>Create your first document to get started</p>
+            <button onClick={() => setShowModal(true)} style={{ backgroundColor: '#0D0D0D', color: '#fff', border: 'none', padding: '12px 24px', cursor: 'pointer' }}>Create Document</button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {docs.map((doc, i) => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+            {docs.map(doc => (
               <div
                 key={doc.id}
-                className="card cursor-pointer group animate-slide-up relative"
-                style={{ animationDelay: `${i * 60}ms`, opacity: 0, animationFillMode: 'forwards' }}
                 onClick={() => navigate(`/editor/${doc.id}`)}
+                style={{ backgroundColor: '#fff', border: '1px solid #E2DDD6', padding: '24px', cursor: 'pointer', position: 'relative' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#0D0D0D'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = '#E2DDD6'}
               >
-                {/* Doc icon */}
-                <div className="w-8 h-10 border border-border flex items-center justify-center mb-4 group-hover:border-accent transition-colors">
-                  <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
-                  </svg>
-                </div>
-                <h3 className="font-display font-semibold text-ink mb-1 truncate pr-8">{doc.title}</h3>
-                <p className="font-mono text-xs text-muted">{formatDate(doc.created_at)}</p>
-
-                {/* Delete button */}
-                <button
-                  onClick={(e) => deleteDoc(doc.id, e)}
-                  className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-accent"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+                <p style={{ fontWeight: '600', color: '#0D0D0D', marginBottom: '8px' }}>{doc.title}</p>
+                <p style={{ color: '#9A9A8E', fontSize: '12px' }}>{formatDate(doc.created_at)}</p>
+                <button onClick={(e) => deleteDoc(doc.id, e)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#9A9A8E', cursor: 'pointer', fontSize: '18px' }}>×</button>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Create modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-ink/50 flex items-center justify-center p-8 z-50 animate-fade-in">
-          <div className="bg-surface w-full max-w-md p-8 animate-slide-up">
-            <h2 className="font-display font-bold text-2xl text-ink mb-6">New Document</h2>
-            <label className="font-display text-xs uppercase tracking-widest text-muted mb-2 block">Document Title</label>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ backgroundColor: '#fff', padding: '32px', width: '100%', maxWidth: '400px' }}>
+            <h2 style={{ fontWeight: 'bold', fontSize: '22px', color: '#0D0D0D', marginBottom: '24px' }}>New Document</h2>
             <input
-              className="input-field mb-6"
+              style={{ width: '100%', border: '1px solid #E2DDD6', padding: '12px 16px', fontSize: '14px', outline: 'none', marginBottom: '24px', boxSizing: 'border-box' }}
               type="text"
               placeholder="Untitled Document"
               value={newTitle}
@@ -162,11 +114,11 @@ export default function Dashboard({ session }) {
               onKeyDown={e => e.key === 'Enter' && createDoc()}
               autoFocus
             />
-            <div className="flex gap-3">
-              <button className="btn-primary flex-1 flex items-center justify-center" onClick={createDoc} disabled={creating}>
-                {creating ? <span className="w-4 h-4 border-2 border-paper border-t-transparent rounded-full animate-spin" /> : 'Create'}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={createDoc} disabled={creating} style={{ flex: 1, backgroundColor: '#0D0D0D', color: '#fff', border: 'none', padding: '12px', cursor: 'pointer', fontWeight: '600' }}>
+                {creating ? 'Creating...' : 'Create'}
               </button>
-              <button className="btn-ghost flex-1" onClick={() => { setShowModal(false); setNewTitle('') }}>
+              <button onClick={() => { setShowModal(false); setNewTitle('') }} style={{ flex: 1, backgroundColor: '#fff', color: '#0D0D0D', border: '1px solid #E2DDD6', padding: '12px', cursor: 'pointer', fontWeight: '600' }}>
                 Cancel
               </button>
             </div>
