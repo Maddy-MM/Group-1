@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Syne", sans-serif;
-  --font-body: "DM Sans", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-
   --color-ink: #0D0D0D;
   --color-paper: #F5F2EB;
   --color-accent: #E8572A;
   --color-muted: #9A9A8E;
   --color-surface: #FFFFFF;
   --color-border: #E2DDD6;
+
+  --font-display: "Syne", sans-serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 @layer base {
