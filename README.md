@@ -6,8 +6,8 @@ A full-stack real-time document editor where multiple users can collaborate simu
 
 ## 🚀 Live Demo
 
-- **Frontend**: [your-app.vercel.app](https://your-app.vercel.app)
-- **Backend**: [your-server.onrender.com](https://your-server.onrender.com)
+- **Frontend**: [collab-app-omega.vercel.app/](https://collab-app-omega.vercel.app/)
+- **Backend**: [https://group-1-8vy2.onrender.com/](https://https://group-1-8vy2.onrender.com/)
 
 ---
 
